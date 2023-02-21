@@ -220,11 +220,18 @@ class PointFusion(BaseModule):
         Returns:
             torch.Tensor: Fused features of each point.
         """
-        img_pts = self.obtain_mlvl_feats(img_feats, pts, img_metas)
+        #加入图像自适应权重分配，占比为40%
+        img_pts = self.obtain_mlvl_feats(img_feats, pts, img_metas) * 0.4
         img_pre_fuse = self.img_transform(img_pts)
         if self.training and self.dropout_ratio > 0:
             img_pre_fuse = F.dropout(img_pre_fuse, self.dropout_ratio)
-        pts_pre_fuse = self.pts_transform(pts_feats)
+        #加入点云自适应权重分配，占比为60%
+        pts_pre_fuse = self.pts_transform(pts_feats * 0.6)
+        #查看图像特征与点云特征的维度信息
+        # print('before 图像特征的维度：',img_pts.shape)
+        # print('aftere 图像特征的维度：',img_pts.shape * 0.4)
+        # print('before 点云特征的维度：',pts_feats)
+        # print('aftere 点云特征的维度：',pts_feats * 0.6)
 
         fuse_out = img_pre_fuse + pts_pre_fuse
         if self.activate_out:
